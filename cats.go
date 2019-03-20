@@ -1,6 +1,7 @@
 package cats
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"sort"
@@ -11,7 +12,26 @@ type Category struct {
 	ID       int
 	Name     string
 	Parent   int
+	Path     string
 	Children []*Category
+}
+
+func (c *Category) generatePath(cm *CategoryMap) {
+	path := new(bytes.Buffer)
+
+	if c.Parent != 0 {
+		path.WriteString(cm.Get(c.Parent).Path)
+		path.WriteString("/")
+	} else {
+		path.WriteString("/")
+	}
+
+	path.WriteString(c.Name)
+	c.Path = path.String()
+
+	for _, ch := range c.Children {
+		ch.generatePath(cm)
+	}
 }
 
 // CategoryMap a map of Category pointers and associates an index with it, for ordered output.
@@ -73,6 +93,7 @@ func (cm *CategoryMap) Tree(offset int) (root []*Category) {
 // child relationship of the categories in a tree.
 // It returns an error if json.Marshall does.
 func (cm *CategoryMap) JSONTree(offset int) ([]byte, error) {
+	//return json.MarshalIndent(cm.Tree(offset), "", "  ")
 	return json.Marshal(cm.Tree(offset))
 }
 
@@ -81,4 +102,12 @@ func (cm *CategoryMap) JSONTree(offset int) ([]byte, error) {
 // It returns an error if XML.Marshall does.
 func (cm *CategoryMap) XMLTree(offset int) ([]byte, error) {
 	return xml.Marshal(cm.Tree(offset))
+}
+
+// GeneratePaths generate paths for each category
+func (cm *CategoryMap) GeneratePaths() {
+	root := cm.Tree(0)
+	for _, c := range root {
+		c.generatePath(cm)
+	}
 }
