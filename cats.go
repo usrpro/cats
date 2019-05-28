@@ -11,6 +11,7 @@ import (
 type Category struct {
 	ID       int
 	Name     string
+	Icon     string
 	Parent   int
 	Path     string
 	Children []*Category
